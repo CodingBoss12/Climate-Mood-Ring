@@ -6,26 +6,51 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   text-align: center;
-  transition: background 0.5s ease-in-out;
+  transition: background 0.6s ease-in-out;
 }
 
 .container {
-  max-width: 500px;
+  max-width: 90%;
+  width: 400px;
   padding: 2rem;
   border-radius: 20px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.85);
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
+h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
 .mood-ring {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   margin: 20px auto;
   border-radius: 50%;
   background-color: #aaa;
   border: 6px solid #fff;
-  box-shadow: 0 0 20px rgba(0,0,0,0.2);
-  transition: background-color 0.5s ease;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  transition: background-color 0.5s ease, box-shadow 0.5s ease;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+  100% { box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+}
+
+.data-display {
+  margin: 1rem 0;
+  font-weight: bold;
+  color: #333;
+}
+
+#ecoTip {
+  font-style: italic;
+  margin-top: 1rem;
+  color: #2e7d32;
 }

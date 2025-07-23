@@ -21,4 +21,18 @@ const API_KEY = "YOUR_OPENWEATHERMAP_API_KEY";
 async function getData() {
   try {
     const city = "West Lafayette,US";
-    const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${
+    const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=imperial`);
+    const weatherData = await weatherRes.json();
+
+    if (weatherRes.ok) {
+      const temp = weatherData.main.temp;
+      const aqi = await getAQI(city);
+      updateUI(temp, aqi);
+    } else {
+      throw new Error(weatherData.message);
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    status.textContent = "Error fetching data";
+  }
+}
