@@ -9,14 +9,23 @@
 <body>
   <div class="container">
     <h1>🌍 Climate Mood Ring</h1>
+    
+    <form id="locationForm">
+      <input type="text" id="locationInput" placeholder="Enter city or ZIP" required />
+      <button type="submit">🔍 Check</button>
+    </form>
+
     <div class="mood-ring" id="moodRing"></div>
-    <p id="status">Loading...</p>
+    
+    <p id="status">Enter a location to check the mood 🌦️</p>
     <div class="data-display">
       <p id="tempDisplay"></p>
       <p id="aqiDisplay"></p>
     </div>
+    
     <p id="ecoTip"></p>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
