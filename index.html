@@ -2,134 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Climate Mood Ring</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #eef2f3, #8e9eab);
-      color: #333;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #b2ebf2);
+      padding: 3rem;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
+      min-height: 100vh;
     }
 
-    .app {
+    .container {
       background: white;
       padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      max-width: 400px;
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      position: relative;
+    }
+
+    input {
       width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 2px solid #00acc1;
+      border-radius: 0.5rem;
+      outline: none;
     }
 
-    input[type="text"] {
-      padding: 0.5rem;
+    .dropdown {
+      margin-top: 0.5rem;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      width: 80%;
-      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      position: absolute;
+      width: 100%;
+      z-index: 10;
     }
 
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 8px;
-      background-color: #4caf50;
-      color: white;
+    .dropdown div {
+      padding: 0.75rem;
       cursor: pointer;
     }
 
-    #weather-output {
-      margin-top: 1rem;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #mood-ring {
-      margin-top: 1rem;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: grey;
-      margin-left: auto;
-      margin-right: auto;
+    .dropdown div:hover {
+      background: #e0f7fa;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>🌍 Climate Mood Ring</h1>
-    <form id="location-form">
-      <input type="text" id="location-input" placeholder="Enter ZIP or City" required />
-      <button type="submit">Check Mood</button>
-    </form>
-    <div id="weather-output" class="hidden">
-      <h2 id="city-name"></h2>
-      <p id="temp"></p>
-      <p id="desc"></p>
-      <div id="mood-ring"></div>
-    </div>
+  <div class="container">
+    <input type="text" id="locationInput" placeholder="Enter a city..." autocomplete="off"/>
+    <div class="dropdown" id="dropdown"></div>
   </div>
 
   <script>
-    const form = document.getElementById('location-form');
-    const input = document.getElementById('location-input');
-    const cityOutput = document.getElementById('city-name');
-    const tempOutput = document.getElementById('temp');
-    const descOutput = document.getElementById('desc');
-    const moodRing = document.getElementById('mood-ring');
-    const weatherBox = document.getElementById('weather-output');
+    const cities = [
+      "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
+      "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
+      "Indianapolis", "Austin", "Jacksonville", "Fort Worth", "Columbus"
+    ];
 
-    const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY';
+    const input = document.getElementById("locationInput");
+    const dropdown = document.getElementById("dropdown");
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const query = input.value.trim();
-      if (!query) return;
+    input.addEventListener("input", () => {
+      const value = input.value.toLowerCase();
+      dropdown.innerHTML = "";
 
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${apiKey}&units=imperial`;
+      if (value.length === 0) return;
 
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
+      const filtered = cities.filter(city => city.toLowerCase().includes(value));
+      filtered.forEach(city => {
+        const option = document.createElement("div");
+        option.textContent = city;
+        option.onclick = () => {
+          input.value = city;
+          dropdown.innerHTML = "";
+        };
+        dropdown.appendChild(option);
+      });
 
-        if (data.cod !== 200) {
-          alert('City not found. Try again.');
-          return;
-        }
-
-        const city = data.name;
-        const temp = data.main.temp;
-        const desc = data.weather[0].description;
-
-        cityOutput.textContent = city;
-        tempOutput.textContent = `Temperature: ${temp.toFixed(1)} °F`;
-        descOutput.textContent = `Condition: ${desc}`;
-        weatherBox.classList.remove('hidden');
-
-        updateMoodRing(temp);
-      } catch (err) {
-        alert('Error retrieving weather data.');
+      if (filtered.length === 0) {
+        dropdown.innerHTML = "<div>No cities found.</div>";
       }
     });
 
-    function updateMoodRing(temp) {
-      let color;
-      if (temp <= 32) color = '#00f'; // cold
-      else if (temp <= 50) color = '#0ff'; // cool
-      else if (temp <= 70) color = '#0f0'; // mild
-      else if (temp <= 85) color = '#ff0'; // warm
-      else color = '#f00'; // hot
-
-      moodRing.style.background = color;
-    }
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".container")) {
+        dropdown.innerHTML = "";
+      }
+    });
   </script>
 </body>
 </html>
