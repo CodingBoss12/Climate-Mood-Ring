@@ -13,7 +13,23 @@ const tips = [
   "♻️ Recycle your plastics & paper!",
   "🌳 Plant a tree (or hug one).",
   "🌞 Let sunlight in instead of flipping a switch!",
-  "🧴 Use eco-friendly cleaning products."
+  "🧴 Use eco-friendly cleaning products.",
+  "🌊 Save water by fixing leaks and drips.",
+  "🌱 Compost your food scraps.",
+  "🚮 Reduce single-use plastics.",
+  "🕯️ Use candles instead of electric lights.",
+  "📦 Buy in bulk to reduce packaging waste.",
+  "🧺 Use a clothesline instead of a dryer.",
+  "🌍 Support local farmers and markets.",
+  "🧼 Make your own cleaning products.",
+  "🧢 Wear a hat instead of turning up the heat.",
+  "🧊 Keep your fridge at the right temperature (35-38°F).",
+  "🧺 Use a basket for shopping instead of plastic bags.",
+  "🌿 Choose products with minimal packaging.",
+  "🧴 Use bar soap instead of liquid soap in plastic bottles.",
+  "🌱 Grow your own herbs or vegetables.",
+  "🌼 Use natural pest control methods.",
+  "🌍 Support biodiversity by planting native species."
 ];
 
 const API_KEY = "YOUR_OPENWEATHERMAP_API_KEY";

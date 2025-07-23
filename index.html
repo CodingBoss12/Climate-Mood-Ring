@@ -2,30 +2,134 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Climate Mood Ring</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #eef2f3, #8e9eab);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .app {
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 80%;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+
+    #weather-output {
+      margin-top: 1rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #mood-ring {
+      margin-top: 1rem;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: grey;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app">
     <h1>🌍 Climate Mood Ring</h1>
-    
-    <form id="locationForm">
-      <input type="text" id="locationInput" placeholder="Enter city or ZIP" required />
-      <button type="submit">🔍 Check</button>
+    <form id="location-form">
+      <input type="text" id="location-input" placeholder="Enter ZIP or City" required />
+      <button type="submit">Check Mood</button>
     </form>
-
-    <div class="mood-ring" id="moodRing"></div>
-    
-    <p id="status">Enter a location to check the mood 🌦️</p>
-    <div class="data-display">
-      <p id="tempDisplay"></p>
-      <p id="aqiDisplay"></p>
+    <div id="weather-output" class="hidden">
+      <h2 id="city-name"></h2>
+      <p id="temp"></p>
+      <p id="desc"></p>
+      <div id="mood-ring"></div>
     </div>
-    
-    <p id="ecoTip"></p>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const form = document.getElementById('location-form');
+    const input = document.getElementById('location-input');
+    const cityOutput = document.getElementById('city-name');
+    const tempOutput = document.getElementById('temp');
+    const descOutput = document.getElementById('desc');
+    const moodRing = document.getElementById('mood-ring');
+    const weatherBox = document.getElementById('weather-output');
+
+    const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = input.value.trim();
+      if (!query) return;
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${apiKey}&units=imperial`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.cod !== 200) {
+          alert('City not found. Try again.');
+          return;
+        }
+
+        const city = data.name;
+        const temp = data.main.temp;
+        const desc = data.weather[0].description;
+
+        cityOutput.textContent = city;
+        tempOutput.textContent = `Temperature: ${temp.toFixed(1)} °F`;
+        descOutput.textContent = `Condition: ${desc}`;
+        weatherBox.classList.remove('hidden');
+
+        updateMoodRing(temp);
+      } catch (err) {
+        alert('Error retrieving weather data.');
+      }
+    });
+
+    function updateMoodRing(temp) {
+      let color;
+      if (temp <= 32) color = '#00f'; // cold
+      else if (temp <= 50) color = '#0ff'; // cool
+      else if (temp <= 70) color = '#0f0'; // mild
+      else if (temp <= 85) color = '#ff0'; // warm
+      else color = '#f00'; // hot
+
+      moodRing.style.background = color;
+    }
+  </script>
 </body>
 </html>
