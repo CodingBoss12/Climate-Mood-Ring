@@ -1,29 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Climate Mood Ring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Climate Mood Ring - Full Power</title>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(to right, #e0f7fa, #b2ebf2);
       padding: 3rem;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
     }
-
     .container {
       background: white;
       padding: 2rem;
       border-radius: 1rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      width: 400px;
+      width: 420px;
       position: relative;
     }
-
     input {
       width: 100%;
       padding: 0.75rem;
@@ -32,7 +30,6 @@
       border-radius: 0.5rem;
       outline: none;
     }
-
     .dropdown {
       margin-top: 0.5rem;
       border: 1px solid #ccc;
@@ -44,58 +41,228 @@
       width: 100%;
       z-index: 10;
     }
-
     .dropdown div {
       padding: 0.75rem;
       cursor: pointer;
     }
-
     .dropdown div:hover {
       background: #e0f7fa;
+    }
+    button {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      background-color: #0077ff;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    #weather-output {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+    #mood-ring {
+      margin: 1rem auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background-color: gray;
+      border: 8px solid white;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      transition: background-color 0.7s ease;
+    }
+    #temp, #aqi, #city-name, #desc {
+      font-weight: 600;
+      margin: 0.25rem 0;
+      font-size: 1.1rem;
+    }
+    #error-message {
+      margin-top: 1rem;
+      color: #d32f2f;
+      font-weight: 700;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <input type="text" id="locationInput" placeholder="Enter a city..." autocomplete="off"/>
+    <input type="text" id="locationInput" placeholder="Enter a city or ZIP..." autocomplete="off" />
     <div class="dropdown" id="dropdown"></div>
+    <button id="fetchBtn" disabled>Check Mood</button>
+
+    <div id="error-message"></div>
+
+    <div id="weather-output" style="display:none;">
+      <h2 id="city-name"></h2>
+      <p id="temp"></p>
+      <p id="aqi"></p>
+      <p id="desc"></p>
+      <div id="mood-ring"></div>
+    </div>
   </div>
 
   <script>
+    // Huge list of US cities (top 100, abbreviated here for demo - replace with bigger dataset later)
     const cities = [
       "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
       "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
-      "Indianapolis", "Austin", "Jacksonville", "Fort Worth", "Columbus"
+      "Austin", "Jacksonville", "Fort Worth", "Columbus", "Charlotte",
+      "San Francisco", "Indianapolis", "Seattle", "Denver", "Washington",
+      // add more later or load from a JSON file for full coverage
     ];
 
-    const input = document.getElementById("locationInput");
-    const dropdown = document.getElementById("dropdown");
+    const input = document.getElementById('locationInput');
+    const dropdown = document.getElementById('dropdown');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const weatherOutput = document.getElementById('weather-output');
+    const errorMessage = document.getElementById('error-message');
 
-    input.addEventListener("input", () => {
-      const value = input.value.toLowerCase();
-      dropdown.innerHTML = "";
+    let selectedLocation = '';
 
-      if (value.length === 0) return;
+    // OpenWeatherMap API key (your key here)
+    const API_KEY = 'e31979ee6038f3aab12b5868694305ef';
 
-      const filtered = cities.filter(city => city.toLowerCase().includes(value));
-      filtered.forEach(city => {
-        const option = document.createElement("div");
-        option.textContent = city;
-        option.onclick = () => {
-          input.value = city;
-          dropdown.innerHTML = "";
-        };
-        dropdown.appendChild(option);
-      });
+    // Filter and show dropdown suggestions
+    input.addEventListener('input', () => {
+      const val = input.value.trim().toLowerCase();
+      dropdown.innerHTML = '';
+      errorMessage.textContent = '';
+      weatherOutput.style.display = 'none';
+      selectedLocation = '';
+      fetchBtn.disabled = true;
 
+      if (val.length === 0) return;
+
+      const filtered = cities.filter(city => city.toLowerCase().startsWith(val));
       if (filtered.length === 0) {
-        dropdown.innerHTML = "<div>No cities found.</div>";
+        dropdown.innerHTML = '<div>No cities found.</div>';
+        return;
+      }
+
+      filtered.forEach(city => {
+        const div = document.createElement('div');
+        div.textContent = city;
+        div.addEventListener('click', () => {
+          input.value = city;
+          selectedLocation = city;
+          dropdown.innerHTML = '';
+          fetchBtn.disabled = false;
+        });
+        dropdown.appendChild(div);
+      });
+    });
+
+    // Hide dropdown if clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.container')) {
+        dropdown.innerHTML = '';
       }
     });
 
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".container")) {
-        dropdown.innerHTML = "";
+    // Enable fetch if input matches city exactly
+    input.addEventListener('change', () => {
+      if (cities.includes(input.value.trim())) {
+        selectedLocation = input.value.trim();
+        fetchBtn.disabled = false;
+        dropdown.innerHTML = '';
+      } else {
+        selectedLocation = '';
+        fetchBtn.disabled = true;
+      }
+    });
+
+    // Fetch weather and air quality data
+    async function fetchWeather(location) {
+      errorMessage.textContent = '';
+      weatherOutput.style.display = 'none';
+      fetchBtn.disabled = true;
+
+      try {
+        // First: get lat/lon of city
+        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${API_KEY}`);
+        const geoData = await geoRes.json();
+
+        if (!geoData || geoData.length === 0) {
+          throw new Error('Location not found');
+        }
+
+        const { lat, lon, name } = geoData[0];
+
+        // Second: fetch weather by lat/lon
+        const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`);
+        const weatherData = await weatherRes.json();
+
+        if (!weatherData || !weatherData.main) {
+          throw new Error('Weather data unavailable');
+        }
+
+        // Third: fetch AQI data
+        const aqiRes = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
+        const aqiData = await aqiRes.json();
+
+        if (!aqiData || !aqiData.list || aqiData.list.length === 0) {
+          throw new Error('AQI data unavailable');
+        }
+
+        const temp = weatherData.main.temp;
+        const desc = weatherData.weather[0].description;
+        const aqi = aqiData.list[0].main.aqi;
+
+        displayWeather(name, temp, desc, aqi);
+        fetchBtn.disabled = false;
+
+      } catch (err) {
+        errorMessage.textContent = err.message;
+        fetchBtn.disabled = false;
+      }
+    }
+
+    // Mood ring colors based on AQI index (1=Good, 5=Very Poor)
+    function getMoodColor(aqi) {
+      switch (aqi) {
+        case 1: return '#4caf50'; // green good
+        case 2: return '#ffeb3b'; // yellow moderate
+        case 3: return '#ff9800'; // orange unhealthy for sensitive
+        case 4: return '#f44336'; // red unhealthy
+        case 5: return '#9c27b0'; // purple very unhealthy
+        default: return 'gray';
+      }
+    }
+
+    // Update UI with data
+    function displayWeather(city, temp, desc, aqi) {
+      document.getElementById('city-name').textContent = city;
+      document.getElementById('temp').textContent = `Temperature: ${temp.toFixed(1)} °F`;
+      document.getElementById('desc').textContent = `Condition: ${desc}`;
+      document.getElementById('aqi').textContent = `Air Quality Index: ${aqi}`;
+
+      const moodRing = document.getElementById('mood-ring');
+      moodRing.style.backgroundColor = getMoodColor(aqi);
+
+      weatherOutput.style.display = 'block';
+    }
+
+    // Button click triggers fetch
+    fetchBtn.addEventListener('click', () => {
+      if (selectedLocation) {
+        fetchWeather(selectedLocation);
+      }
+    });
+
+    // Enter key triggers fetch if location valid
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedLocation) {
+          fetchWeather(selectedLocation);
+          dropdown.innerHTML = '';
+        }
       }
     });
   </script>
