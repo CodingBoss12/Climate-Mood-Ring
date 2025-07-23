@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Climate Mood Ring - Full Power</title>
+  <title>Climate Mood Ring - Full US Cities</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -108,14 +108,7 @@
   </div>
 
   <script>
-    // Huge list of US cities (top 100, abbreviated here for demo - replace with bigger dataset later)
-    const cities = [
-      "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
-      "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
-      "Austin", "Jacksonville", "Fort Worth", "Columbus", "Charlotte",
-      "San Francisco", "Indianapolis", "Seattle", "Denver", "Washington",
-      // add more later or load from a JSON file for full coverage
-    ];
+    let cities = [];
 
     const input = document.getElementById('locationInput');
     const dropdown = document.getElementById('dropdown');
@@ -123,10 +116,23 @@
     const weatherOutput = document.getElementById('weather-output');
     const errorMessage = document.getElementById('error-message');
 
-    let selectedLocation = '';
+    let selectedLocation = null;
 
-    // OpenWeatherMap API key (your key here)
     const API_KEY = 'e31979ee6038f3aab12b5868694305ef';
+
+    // Load cities JSON on page load
+    fetch('us_cities_19495.json')
+      .then(res => res.json())
+      .then(data => {
+        cities = data;
+      })
+      .catch(() => {
+        errorMessage.textContent = 'Failed to load city data.';
+      });
+
+    function formatCityDisplay(city) {
+      return `${city.name}, ${city.state}`;
+    }
 
     // Filter and show dropdown suggestions
     input.addEventListener('input', () => {
@@ -134,12 +140,17 @@
       dropdown.innerHTML = '';
       errorMessage.textContent = '';
       weatherOutput.style.display = 'none';
-      selectedLocation = '';
+      selectedLocation = null;
       fetchBtn.disabled = true;
 
       if (val.length === 0) return;
 
-      const filtered = cities.filter(city => city.toLowerCase().startsWith(val));
+      // Filter cities by name or state start with input
+      const filtered = cities.filter(city => 
+        city.name.toLowerCase().startsWith(val) ||
+        city.state.toLowerCase().startsWith(val)
+      ).slice(0, 20); // limit to top 20 for performance
+
       if (filtered.length === 0) {
         dropdown.innerHTML = '<div>No cities found.</div>';
         return;
@@ -147,9 +158,9 @@
 
       filtered.forEach(city => {
         const div = document.createElement('div');
-        div.textContent = city;
+        div.textContent = formatCityDisplay(city);
         div.addEventListener('click', () => {
-          input.value = city;
+          input.value = formatCityDisplay(city);
           selectedLocation = city;
           dropdown.innerHTML = '';
           fetchBtn.disabled = false;
@@ -165,36 +176,30 @@
       }
     });
 
-    // Enable fetch if input matches city exactly
+    // Enable fetch if input matches a city exactly
     input.addEventListener('change', () => {
-      if (cities.includes(input.value.trim())) {
-        selectedLocation = input.value.trim();
+      const val = input.value.trim();
+      const match = cities.find(city => formatCityDisplay(city).toLowerCase() === val.toLowerCase());
+      if (match) {
+        selectedLocation = match;
         fetchBtn.disabled = false;
         dropdown.innerHTML = '';
       } else {
-        selectedLocation = '';
+        selectedLocation = null;
         fetchBtn.disabled = true;
       }
     });
 
-    // Fetch weather and air quality data
-    async function fetchWeather(location) {
+    async function fetchWeather(city) {
       errorMessage.textContent = '';
       weatherOutput.style.display = 'none';
       fetchBtn.disabled = true;
 
       try {
-        // First: get lat/lon of city
-        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${API_KEY}`);
-        const geoData = await geoRes.json();
+        const lat = city.lat;
+        const lon = city.lon;
 
-        if (!geoData || geoData.length === 0) {
-          throw new Error('Location not found');
-        }
-
-        const { lat, lon, name } = geoData[0];
-
-        // Second: fetch weather by lat/lon
+        // Fetch weather
         const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`);
         const weatherData = await weatherRes.json();
 
@@ -202,7 +207,7 @@
           throw new Error('Weather data unavailable');
         }
 
-        // Third: fetch AQI data
+        // Fetch AQI
         const aqiRes = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
         const aqiData = await aqiRes.json();
 
@@ -214,7 +219,7 @@
         const desc = weatherData.weather[0].description;
         const aqi = aqiData.list[0].main.aqi;
 
-        displayWeather(name, temp, desc, aqi);
+        displayWeather(formatCityDisplay(city), temp, desc, aqi);
         fetchBtn.disabled = false;
 
       } catch (err) {
@@ -223,7 +228,6 @@
       }
     }
 
-    // Mood ring colors based on AQI index (1=Good, 5=Very Poor)
     function getMoodColor(aqi) {
       switch (aqi) {
         case 1: return '#4caf50'; // green good
@@ -235,7 +239,6 @@
       }
     }
 
-    // Update UI with data
     function displayWeather(city, temp, desc, aqi) {
       document.getElementById('city-name').textContent = city;
       document.getElementById('temp').textContent = `Temperature: ${temp.toFixed(1)} °F`;
@@ -248,14 +251,12 @@
       weatherOutput.style.display = 'block';
     }
 
-    // Button click triggers fetch
     fetchBtn.addEventListener('click', () => {
       if (selectedLocation) {
         fetchWeather(selectedLocation);
       }
     });
 
-    // Enter key triggers fetch if location valid
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
